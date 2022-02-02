@@ -3,13 +3,13 @@
 @ddlt_util.pks
 @ddlt_util.pkb
 
--- fix for "?" code
+-- workaround for "?" code === recompile
 alter package ddlt_util compile body;
 
 -- DDLT_TOKEN2JSON
-@agg_syn_json_01_spec.sql
-@agg_syn_json_02_temp_table.sql
-@agg_syn_json_03_body.sql
+@token_aggregator_obj.pks
+@token_aggregators.sql
+@token_aggregator_obj.pkb
 
 
 

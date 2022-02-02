@@ -6,7 +6,7 @@ declare
     tt tokens_nt;
     err_code int;
     
-    a agg_syn_json := new agg_syn_json;
+    a token_aggregator_obj := new token_aggregator_obj;
     sql_txt clob;
     
     test_no  int := 7;
@@ -14,8 +14,8 @@ begin
     for test# in 1 .. 10
     loop
 
-    s := ddlt_ras_ut.sample_ut( test# );
-    p := ddlt_ras_ut.sample_utp( test# );
+    s := ddlt_ut.sample_ut( test# );
+    p := ddlt_ut.sample_utp( test# );
     
     begin
         tt := ddlt_util.pattern_parser(  s
@@ -30,7 +30,7 @@ begin
     insert into ddlt_matched_tokens_temp
     select * from table(tt);
     
-    a := new agg_syn_json();
+    a := new token_aggregator_obj();
     for t in (select * from table(tt) order by rn)
     loop
         null;

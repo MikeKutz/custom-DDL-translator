@@ -1,37 +1,37 @@
-create or replace type body agg_syn_json
+create or replace type body token_aggregator_obj
 as
-    constructor function agg_syn_json return self as result
+    constructor function token_aggregator_obj return self as result
     as
         j json_object_t := new json_object_t();
     begin
         json_txt := j.to_string;
-        agg_syn_pk := agg_syn_seq.nextval;
-        lv  := 1;
+        aggregator_pk := token_aggregator_seq.nextval;
+        lvl  := 1;
         is_sub := 0;
         work_state := ddlt_util.work_on_self;
 
         return;
     end;
 
-    member procedure new_ref_obj( self in out nocopy agg_syn_json, p_lvl in int )
+    member procedure new_ref_obj( self in out nocopy token_aggregator_obj, p_lvl in int )
     as
-        v agg_syn_json;
+        v token_aggregator_obj;
     begin
-        v        := new agg_syn_json();
+        v        := new token_aggregator_obj();
 
-        v.lv := v.lv + nvl( nullif( p_lvl, 0 ), 0);
---        dbms_output.put_line( ' -- new obj lvl=' || v.lv || ' build='||is_sub);
+        v.lvl := v.lvl + nvl( nullif( p_lvl, 0 ), 0);
+--        dbms_output.put_line( ' -- new obj lvll=' || v.lvl || ' build='||is_sub);
 
-        insert into temp_syn p
+        insert into token_aggregators p
         values v
         returning ref(p) into sub_json;
 
     end;
 
-    member function iterate_step( self in out nocopy agg_syn_json, t in tokens_t ) return int
+    member function iterate_step( self in out nocopy token_aggregator_obj, t in tokens_t ) return int
     as
         err_code int;
-        v      agg_syn_json;  -- deref sub object
+        v      token_aggregator_obj;  -- deref sub object
         j      json_object_t; -- sub object json_txt
         k      json_array_t;  -- sub object temp_array
         s      json_object_t; -- self json_txt
@@ -40,7 +40,7 @@ as
         as
         begin
             null;
---            dbms_output.put_line( '("' || t.match_class || '","' || t.token || '",' || lv || ':sub =' || is_sub || ') -> ' || p_step );
+--            dbms_output.put_line( '("' || t.match_class || '","' || t.token || '",' || lvl || ':sub =' || is_sub || ') -> ' || p_step );
         end;
 
     begin
@@ -63,7 +63,7 @@ as
     member procedure save_self
     as
     begin
-        update temp_syn a
+        update token_aggregators a
           set a.json_txt   = self.json_txt,
               a.temp_string = self.temp_string,
               a.temp_array  = self.temp_array,
@@ -71,14 +71,14 @@ as
               a.is_sub      = self.is_sub,
               a.current_name = self.current_name,
               a.work_state   = self.work_state
-        where a.agg_syn_pk = self.agg_syn_pk
+        where a.aggregator_pk = self.aggregator_pk
         ;
     end;
 
-    member function self_iterator( self in out nocopy agg_syn_json, t in tokens_t ) return int
+    member function self_iterator( self in out nocopy token_aggregator_obj, t in tokens_t ) return int
     as
         err_code int;
-        v      agg_syn_json;  -- deref sub object
+        v      token_aggregator_obj;  -- deref sub object
         j      json_object_t; -- sub object json_txt
         k      json_array_t;  -- sub object temp_array
         s      json_object_t; -- self json_txt
@@ -90,7 +90,7 @@ as
         as
         begin
             null;
---            dbms_output.put_line( '("' || t.match_class || '","' || t.token || '",' || lv || ':sub =' || is_sub || ') -> ' || p_step );
+--            dbms_output.put_line( '("' || t.match_class || '","' || t.token || '",' || lvl || ':sub =' || is_sub || ') -> ' || p_step );
         end;
 
     begin
@@ -175,17 +175,17 @@ as
                     when 'start_exp' then
                         work_state := ddlt_util.work_on_expression;
                         temp_string := null;
---                        new_ref_obj( lv );
+--                        new_ref_obj( lvl );
 --                        is_sub := 1;
 --                        -- sub_json.work_state := ddlt_util.work_on_expression;
 --                        -- sub_json.save_self
                     when 'start_obj' then
-                        new_ref_obj( lv );
+                        new_ref_obj( lvl );
                         is_sub := 1;
                         work_state := ddlt_util.work_on_sub_object;
                     when 'start_obj_array' then
                         temp_array := null;
-                        new_ref_obj( lv );
+                        new_ref_obj( lvl );
                         is_sub := 1;
                         work_state := ddlt_util.work_on_sub_object_array;
                         log_info( 'starting new object array length(json_text)=' || length(json_txt));
@@ -235,7 +235,7 @@ as
                                     when upper('c_start_obj_array') then 3
                                     else -1
                                 end;
-                new_ref_obj( lv );
+                new_ref_obj( lvl );
             when t.match_class in (upper('c_end_list'), upper('c_end_obj'), upper('c_end_obj_array')) then
                 log_info( 'end of list' );
                 return case t.match_class
@@ -289,10 +289,10 @@ as
         */
     end;
 
-    member function sub_iterator ( self in out nocopy agg_syn_json, t in tokens_t ) return int
+    member function sub_iterator ( self in out nocopy token_aggregator_obj, t in tokens_t ) return int
     as
         err_code int;
-        v       agg_syn_json;
+        v       token_aggregator_obj;
         j      json_object_t := json_object_t(  );
         k      json_array_t := new json_array_t();
         s       json_object_t;
@@ -301,7 +301,7 @@ as
         as
         begin
             null;
---            dbms_output.put_line( '("' || t.match_class || '","' || t.token || '", level=' || lv || ':sub =' || is_sub || ') -> ' || p_step || ' jl=' || length(json_txt));
+--            dbms_output.put_line( '("' || t.match_class || '","' || t.token || '", level=' || lvl || ':sub =' || is_sub || ') -> ' || p_step || ' jl=' || length(json_txt));
         end;
     begin
         select deref(sub_json)

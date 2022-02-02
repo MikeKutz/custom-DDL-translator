@@ -5,9 +5,10 @@ drop package ddlt_util;
 
 drop table DDLT_matched_tokens_temp;
 drop table ddlt_tokens_temp;
-drop table temp_syn;
+drop table token_aggregators;
 
-drop type agg_syn_json;
+drop type token_aggregator_obj;
+drop sequence token_aggregator_seq;
 
 drop type tokens_nt;
 drop type tokens_t;

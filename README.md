@@ -1,167 +1,161 @@
 # custom DDL translator
  Frame work for creating parsers for custom DDL statements.
  
- ## format
- 
- Supported DDL statements are currently in this format:
- 
- `(create|alter|drop) *command_group* *object_type*`
- 
- # Real Application Security (RAS) objects
-  
- Supported `CREATE` objects
- 
- - Security class
- - ACL
- - Policy
- 
- ## Security Class
- 
- ### CREATE
- 
- `create application security class *security_class_name* under ( *csv_security_class* )`
- 
- The segment `*csv_security_class*` is a comma separated list of existing security classes;
- 
- ### example
- 
- ```sql
- create application security class hr_sec_class under ( sys.dml, sys.nsstuff )
- ```
- 
- generates this code
- 
- ```sql
- tbd
- ```
- 
- 
- ## ACL
- 
- ### CREATE
- `create application acl *acl_name* aces ( *ace_entries* )`
- 
- ACE entries are a comma separated list of ACE Entry.
- 
- ### ACE Entry
- `*principal* => ( *csv_privilege* )
- 
- ### Example
- 
- ```sql
- create application acl hr_acl for security class hrpriv aces (
-    hr_representive => ( insert,update,select,delete,view_salary ),
-    auditor => ( select, view_salary ) ,
-    assasin => ( poison, mdk, select, delete )
- )
-```
+# Components
 
-generates this code:
+## Main Components
+
+- Package DDLT_UTIL
+- Type TOKEN_AGGREGATOR_OBJ
+
+## Supporting Objects
+
+Type | Name | Purpose
+-----|------|--------
+Table | TOKEN_AGGREGATORS | Stores objects to be used via `REF()` within `TOKEN_AGGREGATOR_OBJ` These should be deleted when done
+Sequence | TOKEN_AGGREGATOR_SEQ | Sequence for the PK of `TOKEN_AGGREGATORS`
+Temp Table | DDLT_TOKENS_TEMP | Mostly used for overcoming an Ora-600. Good for debugging.
+Temp Table | DDLT_MATCHED_TOKENS_TEMP | Good for debugging
+
+## Additional Objects
+
+Type | Name | Purpose
+-----|------|--------
+Package | DDLT_UT | Package used for Unit Testing
+Package | DDLT_RAS | Planned package for developing RAS objects
+
+# Usage
+
+1. Send statement, pattern, and custom `DEFINE` components through `DDLT_UTIL.pattern_parser()`
+2. Loop through resulting Matched Token through `TOKEN_AGGREATOR_OBJ.iterate_step()`
+3. Build code from resulting JSON (out-of-scope for this project)
+
+Example code
 
 ```sql
-declare
-    aces XS$ACE_LIST := new XS$ACE_LIST();
-    priv XS$LIST;
-    empty_priv XS$LIST := new XS$LIST();
-begin
-    --  ace count = 2
-
-    priv := empty_priv;
-    priv_list.extend(1); priv( priv.last ) := 'delete';
-    priv_list.extend(1); priv( priv.last ) := 'mdk';
-    priv_list.extend(1); priv( priv.last ) := 'poison';
-    priv_list.extend(1); priv( priv.last ) := 'select';
-
-    ace.extend(1);
-    ace( ace.last ) :=  XS$ACE_TYPE( principal => 'assasin',
-                                     privilege => priv
-               );
----------------------------------------------------------------
-
-    priv := empty_priv;
-    priv_list.extend(1); priv( priv.last ) := 'select';
-    priv_list.extend(1); priv( priv.last ) := 'view_salary';
-
-    ace.extend(1);
-    ace( ace.last ) :=  XS$ACE_TYPE( principal => 'auditor',
-                                     privilege => priv
-               );
----------------------------------------------------------------
-
-    priv := empty_priv;
-    priv_list.extend(1); priv( priv.last ) := 'delete';
-    priv_list.extend(1); priv( priv.last ) := 'insert';
-    priv_list.extend(1); priv( priv.last ) := 'select';
-    priv_list.extend(1); priv( priv.last ) := 'update';
-    priv_list.extend(1); priv( priv.last ) := 'view_salary';
-
-    ace.extend(1);
-    ace( ace.last ) :=  XS$ACE_TYPE( principal => 'hr_representive',
-                                     privilege => priv
-               );
----------------------------------------------------------------
-
-    xs_acl.create_acl( aces => aces,
-                acl_name => 'hr_acl',
-                sec      =>  'hrpriv'
-            );
-end;
-/
+-- see DDLT_UT body (for now)
 ```
 
-## Policy
+# Pattern Development
 
-### CREATE
+## Definitions
 
-`create application policy *policy_name* for ( *csv_permissions* )`
+All Match Recognize tokens discovered in the given Pattern will be in the `DEFINE` clause.
 
-### csv_permissions
+Priority of Expression assignment to Match Recognize tokens
+1. Custom Definition
+1. Common Definition
+1. Generic  `1=DDLT_UTIL.always_true(i)`
 
-comma seperate list of one of the following
+These definitions are defined in the Associative Array (`DDLT_UTIL.mr_define_exp_hash`).
 
-- domain_definition
-- foreign_key_definition
-- privilege_definition
+The Common Definitions are used to control the operational state of the `TOKEN_AGGREGATOR_OBJ`.
 
-### domain_definition
+These are:
 
-This for defining a basic RLS rule withing RAS.
+Token | Value | Purpose
+------|-------|-------
+c_start_list | `(` | Start a List
+c_end_list | `)` | End a List
+c_comma  | `,` | Seperator of elements in a List
+c_start_exp | `(` | Start an Expression
+c_end_exp | `)` | End an Expression
+c_start_obj | `(` | Start a child JSON object
+c_end_obj   | `)` | End a child JSON object
+c_start_obj_array | `(` | Start an array of JSON objects
+c_end_obj_array | `)` | End an arraay of JSON object
+c_obj_comma | `,` | Separator for JSON object
+n_* | - | These become the JSON key of the next `JSON_ELEMENT` when the `JSON_ELEMENT` is complete
+o_* | - | These are the value. `j.put( n_key, o_val )`
+l_* | - | These are how List items are actually generated (in this version)
+e_* | - | These are how Expressions are actually generated (in this version)
 
-`domain ( *domain_clause* ) acls ( *csv_acls* ) [static|dynamic]`
+See `DDLT_UT` package for examples and usage.
 
-- *domain_clause* is and SQL boolean expresion
-- *csv_acls* is a comma separated list of ACL names (not quoted)
-- static/dynamic clause is optional : `dynamic` is default
+# Examples
 
-### foreign_key_definition
+## n_ o_
+(Run as `TEST# =>  1`)
 
-Used for MASTER-DETAIL policy enforcement.
+Pattern
+`(n_key o_val)+`
 
-`foreign_key ( *source_columns* ) references *target_schema_table* ( *target_columns* ) [ where ( *where_clause ) ]`
+Statement
+`key_1 val_1 key_2 val_2 key_3 val_3`
 
-- *source_columns* - although RAS supports *expressions*, this generator does not at this time
-- `where` clause is optional
+JSON result
+`{"key_1":"val_1","key_2":"val_2","key_3":"val_3"}`
 
-### privilage
+## List
+(Run as `TEST# => 2`)
+pattern    =" (n_key c_start_list l_item (c_comma l_item)* c_end_list)+"
+statement  ="list_1 ( a, b, c, d ) list_2 ( 1, 2, 4, 4)"
+JSON result={"list_1":["a","b","c","d"],"list_2":["1","2","4","4"]}
 
-Assigns which columns are protected by which *privilege*. ( *privilege* is defined by the *security class*)
+## Expressions
+TEST #   4
+pattern    ="(n_key c_start_exp e_tok+? c_end_exp)*"
+statement  ="where ( 1 =1 ) andalso ( ablkd = fffff )"
+JSON result={}ERROR
 
-`privilege *privilege_name* protects columns ( *csv_colums* )`
+should be `{"where":"1 =1","andalso":"fffff"}`
 
-### Example
+## Creating a JSON Child
+(Run as `TEST# =>  5`
 
-```sql
-create application policy hr_policy for (
-    domain ( department_id = 60 ) acls( it_acl ),
-    domain ( 1 = 1 ) acls ( hr_acl, auditor_acl ),
-    domain ( employee_id = xs_session('xs$session','user_name') ) acls ( emp_acl ),
-    foreign key ( empno, deptno ) references hr.employees ( employee_id, department_id ) where ( private = 1 ) ,
-    privilage view_salary protects columns ( salary , ppi )
-)
+pattern
+`(n_key c_start_obj n_key o_val c_end_obj)+`
+
+statement
+`sub1 ( key1 val1 )`
+
+JSON result
+`{"sub1":{"key1":"val1"}}`
+
+## RAS ACL
+(Run as `TEST# => 10`)
+pattern
+```
+w_ras n_acl o_acl_name n_ace_list c_start_obj_array
+  (n_principal o_principal_name n_privileges c_start_list l_priv (c_comma l_priv)*  c_end_list
+(c_obj_comma|c_end_obj_array))+
 ```
 
-generates this code
+statement
+`ras acl hr_acl aces ( principal hr_representive privileges ( insert , update, select, delete, show_salary ) )`
 
-```sql
--- TBD
-```
+JSON result
+`{"acl":"hr_acl","aces":[{"principal":"hr_representive","privileges":["insert","update","select","delete","show_salary"]}]}`
+
+
+
+
+TEST #   3
+statement  ="key_1 val_1 list_1 (a,b,c,d)"
+pattern    ="(n_key o_val)
+                              (n_key c_start_list l_item (c_comma l_item)* c_end_list)"
+JSON result={"key_1":"val_1","list_1":["a","b","c","d"]}
+---------------------------
+---------------------------
+TEST #   6
+statement  ="sub1 ( key1 val1 ) sub2 (key2 val2)"
+pattern    ="(n_key c_start_obj n_key o_val c_end_obj)+"
+JSON result={"sub1":{"key1":"val1"},"sub2":{"key2":"val2"}}
+---------------------------
+TEST #   7
+statement  ="sub1 ( arr-1 ( a, b, c, d ) key1 val1 where ( 1 =1 ) )"
+pattern    ="n_one c_start_obj n_two c_start_list l_item (c_comma l_item)* c_end_list
+            n_three o_three n_exp c_start_exp e_tok+? c_end_exp c_end_obj"
+JSON result={}
+---------------------------
+TEST #   8
+statement  ="yes no maybe idontknow"
+pattern    ="x_icecream x_witch x_sex x_age"
+JSON result={"ICECREAM":"yes","WITCH":"no","SEX":"maybe","AGE":"idontknow"}
+---------------------------
+TEST #   9
+statement  ="blight ( hello world, good-day to-you, kill all-humans Bender )"
+pattern    ="n_phrases c_start_obj_array
+                                ( x_verb x_person x_quote? (c_obj_comma|c_end_obj_array))+"
+JSON result={"blight":[{"VERB":"hello","PERSON":"world"},{"VERB":"good-day","PERSON":"to-you"},{"VERB":"kill","PERSON":"all-humans","QUOTE":"Bender"}]}
+---------------------------
