@@ -78,42 +78,62 @@ See `DDLT_UT` package for examples and usage.
 (Run as `TEST# =>  1`)
 
 Pattern
+
 `(n_key o_val)+`
 
 Statement
+
 `key_1 val_1 key_2 val_2 key_3 val_3`
 
 JSON result
+
 `{"key_1":"val_1","key_2":"val_2","key_3":"val_3"}`
 
 ## List
 (Run as `TEST# => 2`)
-pattern    =" (n_key c_start_list l_item (c_comma l_item)* c_end_list)+"
-statement  ="list_1 ( a, b, c, d ) list_2 ( 1, 2, 4, 4)"
-JSON result={"list_1":["a","b","c","d"],"list_2":["1","2","4","4"]}
-
-## Expressions
-TEST #   4
-pattern    ="(n_key c_start_exp e_tok+? c_end_exp)*"
-statement  ="where ( 1 =1 ) andalso ( ablkd = fffff )"
-JSON result={}ERROR
-
-should be `{"where":"1 =1","andalso":"fffff"}`
-
-## Creating a JSON Child
-(Run as `TEST# =>  5`
 
 pattern
+
+`(n_key c_start_list l_item (c_comma l_item)* c_end_list)+`
+
+statement
+
+`list_1 ( a, b, c, d ) list_2 ( 1, 2, 4, 4)`
+
+JSON result
+
+`{"list_1":["a","b","c","d"],"list_2":["1","2","4","4"]}`
+
+## Expressions
+(Run as `TEST# => 4`)
+
+pattern
+`(n_key c_start_exp e_tok+? c_end_exp)*`
+
+`where ( 1 =1 ) andalso ( ablkd = fffff )`
+
+JSON result= `{}`
+
+**ERROR** should be `{"where":"1 =1","andalso":"fffff"}`
+
+## Creating a JSON Child
+(Run as `TEST# =>  5`)
+
+pattern
+
 `(n_key c_start_obj n_key o_val c_end_obj)+`
 
 statement
+
 `sub1 ( key1 val1 )`
 
 JSON result
+
 `{"sub1":{"key1":"val1"}}`
 
 ## RAS ACL
 (Run as `TEST# => 10`)
+
 pattern
 ```
 w_ras n_acl o_acl_name n_ace_list c_start_obj_array
@@ -122,40 +142,84 @@ w_ras n_acl o_acl_name n_ace_list c_start_obj_array
 ```
 
 statement
+
 `ras acl hr_acl aces ( principal hr_representive privileges ( insert , update, select, delete, show_salary ) )`
 
 JSON result
+
 `{"acl":"hr_acl","aces":[{"principal":"hr_representive","privileges":["insert","update","select","delete","show_salary"]}]}`
 
+## Boolean Flags (`x_`))
+(Run as `TEST#   8`)
 
+pattern
 
+`x_icecream x_witch x_sex x_age`
 
-TEST #   3
-statement  ="key_1 val_1 list_1 (a,b,c,d)"
-pattern    ="(n_key o_val)
-                              (n_key c_start_list l_item (c_comma l_item)* c_end_list)"
-JSON result={"key_1":"val_1","list_1":["a","b","c","d"]}
----------------------------
----------------------------
-TEST #   6
-statement  ="sub1 ( key1 val1 ) sub2 (key2 val2)"
-pattern    ="(n_key c_start_obj n_key o_val c_end_obj)+"
-JSON result={"sub1":{"key1":"val1"},"sub2":{"key2":"val2"}}
----------------------------
-TEST #   7
-statement  ="sub1 ( arr-1 ( a, b, c, d ) key1 val1 where ( 1 =1 ) )"
-pattern    ="n_one c_start_obj n_two c_start_list l_item (c_comma l_item)* c_end_list
-            n_three o_three n_exp c_start_exp e_tok+? c_end_exp c_end_obj"
-JSON result={}
----------------------------
-TEST #   8
-statement  ="yes no maybe idontknow"
-pattern    ="x_icecream x_witch x_sex x_age"
-JSON result={"ICECREAM":"yes","WITCH":"no","SEX":"maybe","AGE":"idontknow"}
----------------------------
-TEST #   9
-statement  ="blight ( hello world, good-day to-you, kill all-humans Bender )"
-pattern    ="n_phrases c_start_obj_array
-                                ( x_verb x_person x_quote? (c_obj_comma|c_end_obj_array))+"
-JSON result={"blight":[{"VERB":"hello","PERSON":"world"},{"VERB":"good-day","PERSON":"to-you"},{"VERB":"kill","PERSON":"all-humans","QUOTE":"Bender"}]}
----------------------------
+statement
+
+`yes no maybe idontknow`
+
+JSON result
+
+`{"ICECREAM":"yes","WITCH":"no","SEX":"maybe","AGE":"idontknow"}`
+
+## Test 3
+(Run as `TEST# => 3`)
+
+statement
+
+`key_1 val_1 list_1 (a,b,c,d)`
+
+pattern
+
+`(n_key o_val) (n_key c_start_list l_item (c_comma l_item)* c_end_list)`
+
+JSON result
+
+`{"key_1":"val_1","list_1":["a","b","c","d"]}`
+
+## Test 6
+(Run as `TEST# => 6`)
+
+pattern
+
+`(n_key c_start_obj n_key o_val c_end_obj)+`
+
+statement 
+
+`sub1 ( key1 val1 ) sub2 (key2 val2)`
+
+JSON result
+
+`{"sub1":{"key1":"val1"},"sub2":{"key2":"val2"}}`
+
+## Test 7
+(Run as `TEST#   7`)
+
+pattern
+
+`n_one c_start_obj n_two c_start_list l_item (c_comma l_item)* c_end_list
+            n_three o_three n_exp c_start_exp e_tok+? c_end_exp c_end_obj`
+
+statement
+
+`sub1 ( arr-1 ( a, b, c, d ) key1 val1 where ( 1 =1 ) )`
+
+JSON result=`{}`
+
+## Test 9
+(Run as `TEST#   9`)
+
+pattern
+
+`n_phrases c_start_obj_array
+                                ( x_verb x_person x_quote? (c_obj_comma|c_end_obj_array))+`
+
+statement
+
+`blight ( hello world, good-day to-you, kill all-humans Bender )"`
+
+JSON result
+
+`{"blight":[{"VERB":"hello","PERSON":"world"},{"VERB":"good-day","PERSON":"to-you"},{"VERB":"kill","PERSON":"all-humans","QUOTE":"Bender"}]}`
