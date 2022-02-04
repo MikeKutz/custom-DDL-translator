@@ -17,6 +17,35 @@ create application acl hr_2_acl aces (
 
      1 => q'[
 create application policy hr_policy for (
+    rls domain ( department_id = 60 ) acls( it_acl )
+)]',
+
+     2 => q'[
+create application policy hr_policy for (
+    rls domain ( department_id = 60 ) acls( it_acl ),
+    rls domain ( 1 = 1 ) acls ( hr_acl, auditor_acl ),
+    rls domain ( employee_id = xs_session('xs$session','user_name') ) acls ( emp_acl )
+)]',
+     3 => q'[
+create application policy hr_policy for (
+    foreign source_columns ( empno, deptno ) references table hr.employees target_columns ( employee_id, department_id ) where ( private = 1 ) 
+)]',
+     5 => q'[
+create application policy hr_policy for (
+    rls domain ( department_id = 60 ) acls( it_acl ),
+    rls domain ( 1 = 1 ) acls ( hr_acl, auditor_acl ),
+    rls domain ( employee_id = xs_session('xs$session','user_name') ) acls ( emp_acl ),
+    privilege view_salary protects columns ( salary , pii ),
+    foreign source_columns ( empno, deptno ) references table hr.employees target_columns ( employee_id, department_id ) where ( private = 1 ) 
+)]',
+     4 => q'[
+create application policy hr_policy for (
+    privilege view_salary protects columns ( salary , pii )
+)]',
+
+
+     9 => q'[
+create application policy hr_policy for (
     domain ( department_id = 60 ) acls( it_acl ),
     domain ( 1 = 1 ) acls ( hr_acl, auditor_acl ),
     domain ( employee_id = xs_session('xs$session','user_name') ) acls ( emp_acl ),

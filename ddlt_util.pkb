@@ -372,7 +372,7 @@ end; ]';
       }';
     end;
 
-    function pattern_parser( statement_txt in clob, pattern_txt in clob, custom_dev in mr_define_exp_hash, sql_txt out clob ) return tokens_nt
+    function pattern_parser( statement_txt in clob, pattern_txt in clob, custom_dev in mr_define_exp_hash, sql_txt out clob, run_sql boolean default true ) return tokens_nt
     as
         definition_txt clob;
         tokens         tokens_nt := new tokens_nt();
@@ -404,25 +404,39 @@ end; ]';
         insert into ddlt_tokens_temp
         select * from table(tokens);
 
-        -- do actual Dynamic SQL
-        c := dbms_sql.open_cursor;
-
-        begin
-            DBMS_SQL.parse( c, txt, DBMS_SQL.NATIVE );
-        exception
-            when others then
-                dbms_output.put_line( 'BAD SQL !!' );
-                dbms_output.put_line(txt);
-                dbms_output.put_line( 'BAD SQL !!' );
-                raise;
-        end;
-
-        DBMS_SQL.BIND_VARIABLE( c, ':tokens', tokens ); -- works on UDTs
-        DBMS_SQL.BIND_VARIABLE( c, ':result', ret_val ); -- works on UDTs
-        err_code := DBMS_SQL.EXECUTE( c );
-        DBMS_SQL.VARIABLE_VALUE( c, ':result', ret_val);
+        if run_sql
+        then
+            -- do actual Dynamic SQL
+            c := dbms_sql.open_cursor;
+    
+            begin
+                null;
+                DBMS_SQL.parse( c, txt, DBMS_SQL.NATIVE );
+            exception
+                when others then
+                    dbms_sql.close_cursor( c );
+                    dbms_output.put_line( 'BAD SQL !!' );
+                    dbms_output.put_line(txt);
+                    dbms_output.put_line( 'BAD SQL !!' );
+                    raise;
+            end;
+    
+            DBMS_SQL.BIND_VARIABLE( c, ':tokens', tokens ); -- works on UDTs
+            DBMS_SQL.BIND_VARIABLE( c, ':result', ret_val ); -- works on UDTs
+            err_code := DBMS_SQL.EXECUTE( c );
+            DBMS_SQL.VARIABLE_VALUE( c, ':result', ret_val);
+            
+            dbms_sql.close_cursor( c );
+        end if;
         
         return ret_val;
+    exception
+        when others then
+                dbms_output.put_line( 'RUN TIME BAD SQL !!' );
+                dbms_output.put_line(txt);
+                dbms_output.put_line( 'RUN TIME BAD SQL !!' );
+            dbms_sql.close_cursor( c );
+            raise;
     end;
 
 end;

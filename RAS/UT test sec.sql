@@ -16,18 +16,18 @@ begin
     
     tt := ddlt_util.pattern_parser( s
                                     ,p
-                                    ,ddlt_ras.get_define( ddlt_ras.acls )
+                                    ,ddlt_ras.get_define( ddlt_ras.security_class )
                                     ,sql_txt );
 
     delete from ddlt_matched_tokens_temp;
     insert into ddlt_matched_tokens_temp select * from table(tt);
     
---    for t in values of tt
---    loop
---        err_code := a.iterate_step( t );
---    end loop;
+    for t in values of tt
+    loop
+        err_code := a.iterate_step( t );
+    end loop;
 
---    dbms_output.put_line( a.json_txt );
+    dbms_output.put_line( a.json_txt );
 end;
 /
 select * from ddlt_matched_tokens_temp;

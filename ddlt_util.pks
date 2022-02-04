@@ -201,7 +201,7 @@ as
         calls DBMS_SQL
         may not be fit for PIPELINED function
     */
-    function pattern_parser( statement_txt in clob, pattern_txt in clob, custom_dev in mr_define_exp_hash, sql_txt out clob ) return tokens_nt;
+    function pattern_parser( statement_txt in clob, pattern_txt in clob, custom_dev in mr_define_exp_hash, sql_txt out clob, run_sql boolean default true ) return tokens_nt;
     
 end;
 /
