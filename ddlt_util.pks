@@ -20,6 +20,8 @@ as
     *  needed to build DEFINE of MATCH_RECOGNIZE
     */
     type mr_define_exp_hash is table of clob index by ras_obj_name_t;
+    type mr_pattern_hash is table of clob index by ras_obj_name_t;
+    type mr_define_hash_hash is table of mr_define_exp_hash index by ras_obj_name_t;
     
     /* known standard MATCH_RECOGNIZE DEFINE components
             c_start_list       as token = '(' and 1=ddlt_util.always_true(101),
@@ -48,7 +50,8 @@ as
         'c_start_obj_array'  => q'[token = '(' and 1=ddlt_util.always_true(1008)]',
         'c_end_obj_array'    => q'[token = ')' and 1=ddlt_util.always_true(1009)]',
         'c_obj_comma'        => q'[token = ',' and 1=ddlt_util.always_true(1010)]',
-        'c_semi'             => q'[token = ';' and 1=ddlt_util.always_true(1011)]'
+        'c_semi'             => q'[token = ';' and 1=ddlt_util.always_true(1011)]',
+        'c_hash'             => q'[token = ';' and 1=ddlt_util.always_true(1012)]'
     );
     
     general_error exception;

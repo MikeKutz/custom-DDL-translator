@@ -3,9 +3,9 @@ as
     sample_acl_txt dbms_sql.clob_table := dbms_sql.clob_table(
      1 =>  q'[
 create application acl hr_acl for security class hrpriv aces (
-    hr_representive => ( insert,update,select,delete,view_salary ),
-    auditor => ( select, view_salary ) ,
-    assasin => ( poison, mdk, select, delete )
+    principal hr_representive privileges ( insert,update,select,delete,view_salary ),
+    principal auditor privileges ( select, view_salary ) ,
+    principal assasin privileges ( poison, mdk, select, delete )
 )]',
     2 => q'[
 create application acl hr_2_acl aces (
@@ -25,7 +25,11 @@ create application policy hr_policy for (
 )]'
 );
 
-    sample_security_class_txt dbms_sql.clob_table := dbms_sql.clob_table( );
+    sample_security_class_txt dbms_sql.clob_table := dbms_sql.clob_table(
+        1 => 'create application security_class hr_priv
+                    under ( sys.dml, sys.ns_mod )
+                    define privileges ( view_salary, ppi )'
+    );
 
 
     function sample_security_class( n int default 1 ) return clob
@@ -78,8 +82,44 @@ create application policy hr_policy for (
 
     function generate_code( n int default 1, ras_obj in varchar2 ) return clob
     as
+        p clob;
+        s clob;
+        tt tokens_nt;
+        err_code int;
+        
+        a token_aggregator_obj := new token_aggregator_obj;
+        sql_txt clob;
     begin
-
+        case ras_obj
+            when 'aclx' then
+                s := sample_acl( n );
+--                p := sample_utp( n );
+            else
+                dbms_output.put_line('object type "' || ras_obj || '" not known.');
+                raise no_data_found;
+        end case;
+        
+        tt := ddlt_util.pattern_parser(  s
+                                        ,p
+                                        ,ddlt_util.mr_define_exp_hash()
+                                        ,sql_txt );
+        
+        delete from ddlt_matched_tokens_temp;
+        insert into ddlt_matched_tokens_temp
+        select * from table(tt);
+        
+        a := new token_aggregator_obj();
+        for t in (select * from table(tt) order by rn)
+        loop
+            null;
+            err_code := a.iterate_step( tokens_t(t.match#, t.match_class, t.rn, t.token));
+        end loop;
+        dbms_output.put_line( 'RAS Objet  ="' || ras_obj || '"' );
+        dbms_output.put_line( 'statement  ="' || s || '"' );
+        dbms_output.put_line( 'pattern    ="' || p || '"' );
+        dbms_output.put_line( 'JSON result=' || a.json_txt);
+        dbms_output.put_line( '---------------------------' );
+        
         return 'TODO';
     end;
 
