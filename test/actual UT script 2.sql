@@ -9,9 +9,9 @@ declare
     a token_aggregator_obj := new token_aggregator_obj;
     sql_txt clob;
     
-    test_no  int := 7;
+    test_no  int := null;
 begin
-    for test# in 1 .. 10
+    for test# in nvl(test_no,1) .. nvl(test_no,10)
     loop
 
     s := ddlt_ut.sample_ut( test# );
@@ -53,3 +53,4 @@ begin
 end;
 /
 
+select * from ddlt_matched_tokens_temp;
