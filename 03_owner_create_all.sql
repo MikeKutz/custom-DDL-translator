@@ -1,22 +1,37 @@
 set define off;
 -- run as owner
-@ddlt_UDT_types.sql
-@ddlt_util.pks
-@ddlt_util.pkb
+-- UDT specs
+@@./UDTs/tokens_t.sql
+@@./UDTs/tokens_nt.sql
+@@./UDTs/token_aggregator_obj.tks
+@@./UDTs/syntax_parser_t.pks
+
+-- Tables
+@@./Tables/SQL_Actions.sql
+@@./Tables/syntax_groups.sql
+@@./Tables/gtt_tokens.sql
+@@./Tables/token_aggregators.sql
+@@./Tables/syntax_lists.sql
+
+-- Sequences
+-- @@./Sequences/token_aggregator_seq.sql
+
+-- packages
+@@./Packages/ddlt_util.pks
+@@./Packages/ddlt_util.pkb
 
 -- workaround for "?" code === recompile
 alter package ddlt_util compile body;
 
--- DDLT_TOKEN2JSON
-@token_aggregator_obj.pks
-@token_aggregators.sql
-@token_aggregator_obj.pkb
+@@./Packages/parser_util.pks.sql
+@@./Packages/parser_util.pkb.sql
 
 
+-- UDT Bodies
+@@./UDTs/token_aggregator_obj.tkb
+@@./UDTs/syntax_parser_t.pkb
 
--- RAS packages
--- TBD
 
--- ut packages -- currently SQL file contains both
-@test/ddlt_ut.pks
-@test/ddlt_ut.pkb
+-- UT packages -- currently SQL file contains both
+@@./test/ddlt_ut.pks
+@@./test/ddlt_ut.pkb

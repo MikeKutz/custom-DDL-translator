@@ -14,3 +14,9 @@ grant create procedure
     ,create indextype  -- for indexing Tags
     ,create session
 to cSQL;
+
+grant execute any procedure,
+      execute any type,
+      select any table,
+      select any sequence
+on schema teJSON to cSQL;
