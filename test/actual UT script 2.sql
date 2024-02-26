@@ -1,3 +1,4 @@
+clear screen
 set serveroutput on;
 set timing on;
 declare
@@ -18,9 +19,9 @@ begin
     p := ddlt_ut.sample_utp( test# );
     
     begin
-        tt := ddlt_util.pattern_parser(  s
+        tt := parser_util.pattern_parser(  s
                                         ,p
-                                        ,ddlt_util.mr_define_exp_hash()
+                                        ,parser_util.matchrecognize_define_expression_hash()
                                         ,sql_txt );
 --    exception
 --        when others then null;

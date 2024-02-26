@@ -1,3 +1,4 @@
+set define off;
 -- run as owner
 @ddlt_UDT_types.sql
 @ddlt_util.pks
