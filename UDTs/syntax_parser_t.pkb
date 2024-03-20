@@ -115,6 +115,25 @@ as
     self.assert_match_string();
   end;
   
+  member procedure assert_parsed( self in out nocopy syntax_parser_t, parsed JSON)
+  AS
+    is_valid  number(1);
+    j         json;
+  begin 
+    if self.parsed_sql_schema is NULL
+    then
+      return;
+    end if;
+      j := JSON( self.parsed_sql_schema );
+      is_valid := dbms_json_schema.is_valid( parsed, j, dbms_json_schema.raise_none );
+    if is_valid = 1
+    THEN 
+      return;
+    end if;
+
+    RAISE_APPLICATION_ERROR(-20710, 'Invalid SQL' );
+  end assert_parsed;
+  
   member procedure add_group(self in out nocopy syntax_parser_t )
   as
   begin
@@ -133,14 +152,26 @@ as
     delete from syntax_groups where group_name = self.syntax_group;
   end;
   
+  member procedure upsert_group(self in out nocopy syntax_parser_t, syntax_desc in varchar2  )
+  as
+  begin
+    merge into cSQL.syntax_groups a
+    using (values (self.syntax_group
+                  ,upsert_group.syntax_desc) ) b(group_name, group_desc)
+    on (a.group_name=b.group_name)
+    when matched then update set a.group_desc=b.group_desc
+    when not matched then insert (group_name,group_desc) values (b.group_name, b.group_desc);
+  end;
+  
   member procedure upsert_syntax(self in out nocopy syntax_parser_t )
   as
   begin
+    self.update_match_string();
     self.assert();
     
     self.is_saved := true;
     
-    merge into syntax_lists a
+    merge into cSQL.syntax_lists a
     using (values (self)) b(obj)
     on (a.syntax_action = b.obj.syntax_action
       and a.syntax_group = b.obj.syntax_group
@@ -180,9 +211,13 @@ as
   
   member function get_define(self in out nocopy syntax_parser_t )  return clob
   as
+    temp     cSQL.parser_util.matchrecognize_define_expression_hash;
+    ret_val  clob;
   begin
-    -- need to loop over all keys and generate DEFINE clause
-    return null;
+    temp    := cSQL.parser_util.hash2aa( self.matchrecognize_define);
+    ret_val := cSQL.parser_util.define_hash_to_clause( temp );
+
+    return ret_val;
   end;
   
   member function get_matchrecognize(self in out nocopy syntax_parser_t ) return clob
@@ -190,7 +225,8 @@ as
     ret_value clob;
   begin
     -- returns full match_recognize clause
-    
+    raise_application_error( -20000, 'Code not Implemented');
+
     return null;
   end;
   
@@ -203,18 +239,56 @@ as
   
   member function transpile( self in out nocopy syntax_parser_t, code clob ) return JSON
   as
-    code_json JSON;
+    parsed_tokens  cSQL.tokens_nt;
+    debug_sql_txt  clob;
+
+    code_json      JSON;
   begin
     self.assert();
     self.assert_syntax( code );
-
---    code_json := self.interprete( code );
     
-    -- teJSON( ..., code_json );
+    parsed_tokens :=  cSQL.parser_util.pattern_parser(   statement_txt  => code
+                                                        ,pattern_txt    => self.matchrecognize_pattern
+                                                        ,custom_dev     => cSQL.parser_util.hash2aa( self.matchrecognize_define)
+                                                        ,sql_txt        => debug_sql_txt
+                                                        ,run_sql        => true);
 
-    return null;
+    code_json := cSQL.parser_util.parsed_tokens_to_json( parsed_tokens );
+    
+    return code_json;
   end;
-  
+
+member function build_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return clob
+as
+  ret_value  clob;
+  e          teJSON.Engine_t;
+begin
+  <<assert_input>> -- turn to RAISE <exception>
+  begin
+    if parsed_sql is NULL then goto EOF; end if;
+    if self.code_template is NULL then goto EOF; end if;
+    if self.execution_snippet is NULL then goto EOF; end if;
+
+    -- assert.parsed_sql( parsed_sql )
+
+  end;
+
+  -- initialize Engine_t
+  e := new teJSON.Engine_t( self.code_template );
+
+  -- set Engine_t.params (turn off errors TODO)
+  null;
+
+  -- set Engine_t.vars
+  e.vars.json_clob := json_serialize(parsed_sql);
+
+  -- actually generate code
+  ret_value := e.render_snippet( self.execution_snippet );
+
+  <<EOF>>
+  return ret_value;
+end;
+
 end;
 /
 

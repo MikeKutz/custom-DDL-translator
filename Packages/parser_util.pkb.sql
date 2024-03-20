@@ -348,4 +348,47 @@ end; ]';
     
     return ret_val;
   end generate_code_from_JSON;
+-----------------------------------------------------
+  function hash2aa( hash_data in MKLibrary.Hash_t ) return matchrecognize_define_expression_hash
+  as
+    ret_val matchrecognize_define_expression_hash;
+  BEGIN
+    for rec in ( select *
+                 from json_table( json(hash_data.json_clob), '$.data[*]'
+                    COLUMNS (
+                      key_string varchar2(500) path '$.key_string',
+                      val_string varchar2(500) path '$.val_string'
+                    )
+                 )
+      
+      )
+    loop
+      ret_val( rec.key_string ) := rec.val_string;
+    end loop;
+
+    return ret_val;
+  end hash2aa;
+
+  function aa2hash( aa_data in matchrecognize_define_expression_hash ) return MKLibrary.Hash_t
+  as
+    ret_val    MKLibrary.Hash_t := new MKLIBRARY.Hash_t();
+    j          json_object_t    := new json_object_t();
+    ja         json_array_t     := new json_array_t();
+    j_element  json_object_t;
+  BEGIN
+    j.put( 'data', ja );
+
+    for k,v in pairs of aa_data
+    loop
+      j_element := new json_object_t();
+      j_element.put('key_string', k );
+      j_element.put('val_string', v);
+
+      ja.append(j_element);
+    end loop;
+
+    ret_val.json_clob := j.to_clob;
+    return ret_val;
+  end aa2hash;
+
 END PARSER_UTIL;

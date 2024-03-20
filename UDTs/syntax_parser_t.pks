@@ -10,6 +10,8 @@ type syntax_parser_t as object
     - matchrecognize_pattern - string representing the `pattern` clause of `match_recognize`
     - matchrecognize_define - Hash of `define` lines of `match_recognize`
     - code_template - teJSON Blueprint (templated) used to generate the code for this specific syntax
+    - parsed_sql_schema - the parsed text (transpile) should match this JSON Schema
+    - execution_snippet - teJSON renders this snippet to generate code
     - match_string - used for finding syntax in table within the `dbms_sql_transform` function
     - is_saved - identified if updated/new syntax has been saved (interactive editing)
     
@@ -21,6 +23,8 @@ type syntax_parser_t as object
   ,matchrecognize_pattern clob
   ,matchrecognize_define  MKLibrary.Hash_t
   ,code_template          teJSON.Blueprint
+  ,parsed_sql_schema      clob
+  ,execution_snippet      VARCHAR2(200 char)
   ,is_saved               boolean
   ,match_string           varchar2(1000 char)
   
@@ -46,7 +50,7 @@ type syntax_parser_t as object
    */
   ,member procedure init( self in out nocopy syntax_parser_t, act in varchar2, grp in varchar2, obj in varchar2)
   
-  /* clears all syntax & template related attributes
+  /* clears all syntax and template related attributes
    *
    * TODO : should have no parameters
   */
@@ -74,8 +78,23 @@ type syntax_parser_t as object
   /* assert that this instance passes all individual assertions */
   ,member procedure assert(self in out nocopy syntax_parser_t ) -- needs to do full assert
 
+  /* asserts that the SQL statement belongs to this syntax
+   * 
+   * TODO : implement : create Domain
+   */
+  ,member procedure assert_syntax( self in out nocopy syntax_parser_t, code clob)
+
+  /* asserts parsed SQL (intere) is valid
+   * 
+   * 
+   */
+  ,member procedure assert_parsed( self in out nocopy syntax_parser_t, parsed JSON)
+
   /* saves the `syntax_group` as a known dimension */
   ,member procedure add_group(self in out nocopy syntax_parser_t )
+
+  /* saves the `syntax_group` as a known dimension */
+  ,member procedure upsert_group(self in out nocopy syntax_parser_t, syntax_desc in varchar2 )
   
   /* deletes the current `syntax_group`. This removes all subgroup syntaxes */
   ,member procedure drop_group(self in out nocopy syntax_parser_t )
@@ -112,12 +131,6 @@ type syntax_parser_t as object
   ,member procedure update_match_string(self in out nocopy syntax_parser_t )
   
   -- code generator procedures
-  /* asserts that the SQL statement belongs to this syntax
-   *
-   * TODO : implement : create Domain
-   * TODO : move to assertion section
-   */
-  ,member procedure assert_syntax( self in out nocopy syntax_parser_t, code clob)
   
   /* translate SQL Statement to parsed JSON based on currently loaded syntax
    *
@@ -125,11 +138,11 @@ type syntax_parser_t as object
    */
   ,member function transpile( self in out nocopy syntax_parser_t, code clob ) return JSON
 
-  /* single wrapper interface to generate code from SQL statement using current syntax settings
+  /* Builds code from parsed SQL
    *
-   * this should be called using `dbms_sql_transform`
-   *
-   * TODO : implement : assert, generate, return appropriate code (do_debug)
+   * @param parsed_SQL  JSON of parsed input SQL
+   * @return            generated code
    */
+  ,member function build_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return clob
 );
 /

@@ -85,9 +85,9 @@ as
                           ,run_sql       boolean default true -- what does this do?
                         ) return cSQL.tokens_nt; -- ?? accessible by (package cSQL.ut_???, type cSQL.syntax_parser_t );
 
-  /* TODO
-  parsed_tokens_to_json (from RAS Objects)
-  json_to_code (new)
+  /* 
+  parsed_tokens_to_json (copied from RAS Objects)
+  json_to_code (make as new)
   */
   /* converts parsed tokens into JSON data */
   function parsed_tokens_to_json( x cSQL.tokens_nt ) return JSON;
@@ -99,5 +99,8 @@ as
     NOTE: overall wrapper is "syntax_parser_t.generate_code return clob"
   */
   function generate_code_from_JSON( syntax_json JSON, code_template teJSON.Blueprint ) return clob;
+
+  function hash2aa( hash_data in MKLibrary.Hash_t ) return matchrecognize_define_expression_hash;
+  function aa2hash( aa_data in matchrecognize_define_expression_hash ) return MKLibrary.Hash_t;
 end;
 /

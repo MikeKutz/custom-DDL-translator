@@ -9,8 +9,8 @@ grant create procedure
     ,create synonym
     ,create public synonym
     ,create type
-    ,create table      -- for testing
-    ,create sequence   -- for testing
+    ,create table      
+    ,create sequence   
     ,create indextype  -- for indexing Tags
     ,create session
 to cSQL;
@@ -20,3 +20,6 @@ grant execute any procedure,
       select any table,
       select any sequence
 on schema teJSON to cSQL;
+
+grant execute any domain
+on schema MKLibrary to cSQL;
