@@ -376,8 +376,6 @@ end; ]';
     ja         json_array_t     := new json_array_t();
     j_element  json_object_t;
   BEGIN
-    j.put( 'data', ja );
-
     for k,v in pairs of aa_data
     loop
       j_element := new json_object_t();
@@ -386,6 +384,9 @@ end; ]';
 
       ja.append(j_element);
     end loop;
+
+    j.put( 'data', ja );
+
 
     ret_val.json_clob := j.to_clob;
     return ret_val;

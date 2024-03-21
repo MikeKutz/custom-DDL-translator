@@ -12,7 +12,8 @@ as
 
   type matchrecognize_keys is table of object_name_t;
   
-  type matchrecognize_define_expression_hash is table of clob index by object_name_t;
+  type matchrecognize_define_expression_hash      is table of clob index by object_name_t;
+  type matchrecognize_define_expression_hash_hash is table of matchrecognize_define_expression_hash index by object_name_t;
 
     general_error exception;
     PRAGMA EXCEPTION_INIT (general_error, -20700);
