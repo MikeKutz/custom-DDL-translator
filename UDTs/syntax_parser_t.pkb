@@ -120,6 +120,12 @@ as
     is_valid  number(1);
     j         json;
   begin 
+    -- TODO - not final
+    -- overloaded version checks
+    --   [not] exists of DB objects
+    --   required keywords
+    --   other "completeness"
+    
     if self.parsed_sql_schema is NULL
     then
       return;
@@ -233,7 +239,10 @@ as
   member procedure assert_syntax( self in out nocopy syntax_parser_t, code clob)
   as
   begin
-    -- applies syntax_regexp to code
+    -- TODO - not final
+    -- assert it matches self.match_string
+    -- assert counts of `(` and `)` match
+    -- overload adds individual cheks
     null;
   end;
   

@@ -144,5 +144,5 @@ type syntax_parser_t as object
    * @return            generated code
    */
   ,member function build_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return clob
-);
+) not final;
 /
