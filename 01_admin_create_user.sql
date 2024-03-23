@@ -23,3 +23,5 @@ on schema teJSON to cSQL;
 
 grant execute any domain
 on schema MKLibrary to cSQL;
+
+grant create sql translation profile to cSQL;
