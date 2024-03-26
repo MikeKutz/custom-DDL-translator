@@ -3,7 +3,11 @@ as
     /*
     * utility packagee for  preparing  and  parsing commands
     *
-    *  TODO   append/prepend  'util' to name
+    *  REFACTOR IN PROGRESS
+    *  - DONE - matchrecognize (mr_*) types/constants/code moved to parser_util (should be syntax_parser_util)
+    *  - TODO - move of exceptions to DDLT_ERRORS (still need to redirect references)
+    *  - TODO - move JSON manipulations to MKLibrary.json_util
+    *  - TODO - move global variables to TOKEN_AGGREGATOR_GLOVALS
     *
     * @headcom
     */
@@ -153,7 +157,7 @@ as
     procedure  append_array_array( txt in out nocopy clob, array_text in clob);
     
     /* convert PATTERN into list of unique keys */
-    function pattern_to_definition_keys( txt in clob ) return mr_keys;
+    -- function pattern_to_definition_keys( txt in clob ) return mr_keys;
 
     /* builds the DEFINE clause of a MATCH_RECOGINZE statement
     *
@@ -194,14 +198,20 @@ as
 --          return varchar2 sql_macro(table);
     
 
-    function build_dyna_mr(pattern_txt in clob, definition_txt in clob) return clob;
+    -- function build_dyna_mr(pattern_txt in clob, definition_txt in clob) return clob;
 
     /*
         function pattern_parser( pattern_txt in clob, custom_dev in mr_define_exp_hash ) return tokens_nt
         calls DBMS_SQL
         may not be fit for PIPELINED function
     */
-    function pattern_parser( statement_txt in clob, pattern_txt in clob, custom_dev in mr_define_exp_hash, sql_txt out clob, run_sql boolean default true ) return tokens_nt;
-    
+    -- function pattern_parser( statement_txt in clob, pattern_txt in clob, custom_dev in mr_define_exp_hash, sql_txt out clob, run_sql boolean default true ) return tokens_nt;
+
+  function prepare_name_for_dd( txt in varchar2 ) return varchar2
+    deterministic;
+
+  procedure assert_schema_exists( uname in varchar2);
+  procedure assert_schema_not_exists( uname in varchar2 );
+
 end;
 /
