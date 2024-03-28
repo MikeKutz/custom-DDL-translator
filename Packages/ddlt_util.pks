@@ -58,19 +58,21 @@ as
         'c_hash'             => q'[token = ';' and 1=ddlt_util.always_true(1012)]'
     );
     
-    general_error exception;
-    PRAGMA EXCEPTION_INIT (general_error, -20700);
+    /* moved to DDLT_ERRORS */
+    -- general_error exception;
+    -- PRAGMA EXCEPTION_INIT (general_error, -20700);
     
+    /* moved to TOKEN_AGGREGATOR_GLOBALS */
     /** used by SYN AGGREGATOR **/
-    subtype state_t is number(1);
-    work_on_self       constant state_t := 0;
-    work_on_expression constant state_t := 1;
-    work_on_array      constant state_t := 2;
-    work_on_sub_object constant state_t := 3;
-    work_on_sub_object_array constant state_t := 4;
+    -- subtype state_t is number(1);
+    -- work_on_self       constant state_t := 0;
+    -- work_on_expression constant state_t := 1;
+    -- work_on_array      constant state_t := 2;
+    -- work_on_sub_object constant state_t := 3;
+    -- work_on_sub_object_array constant state_t := 4;
     
-    p2s_no    constant state_t := 0;
-    p2s_yes   constant state_t := 1;
+    -- p2s_no    constant state_t := 0;
+    -- p2s_yes   constant state_t := 1;
     
     
     /*
@@ -210,6 +212,7 @@ as
   function prepare_name_for_dd( txt in varchar2 ) return varchar2
     deterministic;
 
+  /* these stay - maybe */
   procedure assert_schema_exists( uname in varchar2);
   procedure assert_schema_not_exists( uname in varchar2 );
 
