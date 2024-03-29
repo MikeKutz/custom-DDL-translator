@@ -216,5 +216,40 @@ as
   procedure assert_schema_exists( uname in varchar2);
   procedure assert_schema_not_exists( uname in varchar2 );
 
+  procedure assert_object_exists( uname in varchar2, oname in varchar2);
+  procedure assert_object_not_exists( uname in varchar2, oname in varchar2);
+  
+  procedure assert_package_exists( uname in varchar2);
+  procedure assert_package_not_exists( uname in varchar2);
+
+  procedure assert_type_exists( uname in varchar2);
+  procedure assert_type_not_exists( uname in varchar2);
+
+  /* checks for actual table
+     TODO - check for any selectable object (table/mv/v/objec table)
+  */
+  procedure assert_btable_exists( uname in varchar2);
+  procedure assert_btable_not_exists( uname in varchar2);
+
+  procedure assert_view_exists( uname in varchar2);
+  procedure assert_view_not_exists( uname in varchar2);
+
+  procedure assert_domain_exists( uname in varchar2);
+  procedure assert_domain_not_exists( uname in varchar2);
+
+  -- selectable table
+  -- column
+  -- synonym
+  -- function/procedure
+  -- check constraint
+  -- UQ (includes PK)
+
+  procedure assert_index_exists( uname in varchar2);
+  procedure assert_index_not_exists( uname in varchar2);
+
+  procedure assert_sequence_exists( uname in varchar2);
+  procedure assert_sequence_not_exists( uname in varchar2);
+
+
 end;
 /

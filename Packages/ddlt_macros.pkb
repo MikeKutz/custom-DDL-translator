@@ -31,9 +31,21 @@ as
   begin
     return q'[select username
               from all_users
-              where (username) = (select first_name from cSQL.ddlt_macros.decode_triplet_clean(uname))]';
+              where (username) = (select nvl(last_name,first_name) from cSQL.ddlt_macros.decode_triplet_clean(uname))]';
   end assert_schema;
-  
+
+  /* asserts that a schema exists
+  */
+  function assert_object( uname in varchar2, otype in varchar2 ) return clob
+    sql_macro(table)
+  as
+  begin
+    return q'[select owner, object_name
+              from all_objects
+              where (owner,object_name) = (select nvl(last_name,user), nvl(middle_name, first_name) from cSQL.ddlt_macros.decode_triplet_clean(uname))
+                and object_type=upper( otype )]';
+  end assert_object;
+    
 end ddlt_macros;
 /
 

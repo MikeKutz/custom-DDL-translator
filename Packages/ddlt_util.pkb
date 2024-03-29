@@ -486,6 +486,20 @@ end; ]';
       raise item_not_exists;
   end;
 
+  procedure "_assert_object"( uname in varchar2, oname in varchar2 )
+  as
+    CURSOR c is select * from cSQL.ddlt_macros.assert_object(null,null);
+    var c%rowtype;
+  begin
+    select * into var from cSQL.ddlt_macros.assert_object(uname, oname);
+
+    raise item_exists;
+  exception
+    when no_data_found then
+      raise item_not_exists;
+  end;
+
+
   procedure assert_schema_exists( uname in varchar2)
   as
   begin
@@ -510,5 +524,132 @@ end; ]';
       null;
   end;
 
+  procedure assert_object_exists( uname in varchar2, oname in varchar2)
+  as
+    l_name varchar2(400);
+  begin
+
+    <<test_schema_and_modify>>
+    begin
+      assert_schema_exists( uname );
+
+      -- user exists, append a fake f() name so package name is `missle_name`
+      if 2 = cSQL.db_object_triplet( uname ).parts
+      then
+        l_name := uname || '.func';
+      else
+        l_name := uname;
+      end if;
+    exception
+      when cSQL.ddlt_errors.object_not_exists then
+        -- prepend USER so that Package is Middle or First name
+        l_name := user || '.' || uname;
+    end;
+
+
+    "_assert_object"( l_name, oname );
+  exception
+    when item_exists then
+      null;
+    when item_not_exists then
+      raise_application_error( cSQL.ddlt_errors.g_object_not_exists
+                              ,cSQL.DDLT_ERRORS.GET_ERROR_TEXT( cSQL.ddlt_errors.g_object_not_exists, upper(oname), l_name ));
+  end;
+
+  procedure assert_object_not_exists( uname in varchar2, oname in varchar2)
+  as
+  BEGIN
+    assert_object_exists( uname, oname );
+
+    raise_application_error( cSQL.ddlt_errors.g_object_exists
+                            ,cSQL.DDLT_ERRORS.GET_ERROR_TEXT( cSQL.ddlt_errors.g_object_exists, upper( oname ), uname ));
+  EXCEPTION
+    when cSQL.ddlt_errors.object_not_exists then null;
+  end;
+
+  procedure assert_package_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'PACKAGE');
+  end;
+
+  procedure assert_package_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'PACKAGE');
+  end;
+
+  procedure assert_type_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'TYPE');
+  end;
+
+  procedure assert_type_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'TYPE');
+  end;
+
+  procedure assert_btable_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'TABLE');
+  end;
+
+  procedure assert_btable_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'TABLE');
+  end;
+procedure assert_view_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'VIEW');
+  end;
+
+  procedure assert_view_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'VIEW');
+  end;
+
+  procedure assert_sequence_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'SEQUENCE');
+  end;
+
+  procedure assert_sequence_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'SEQUENCE');
+  end;
+
+    procedure assert_domain_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'DOMAIN');
+  end;
+
+  procedure assert_domain_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'DOMAIN');
+  end;
+
+  procedure assert_index_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'INDEX');
+  end;
+
+  procedure assert_index_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'INDEX');
+  end;
+
+  
 end;
 /
