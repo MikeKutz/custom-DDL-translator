@@ -1,5 +1,33 @@
+set define off;
 create or replace package body ddlt_util
 as
+  -- for DD assertions
+  item_exists    exception;
+  item_not_exists exception;
+
+  function prepare_name_for_dd( txt in varchar2 ) return varchar2
+    deterministic
+  as
+    l_buffer varchar2(130 byte);
+  begin
+    l_buffer := dbms_assert.simple_sql_name(txt);
+
+    -- need better method of asserting name
+    -- schema.package.a_name
+
+    case
+      when txt like '.' and txt not like '"%"' then
+        raise too_many_rows;
+      when txt like '"%"' then
+        return trim( both '"' from txt);
+      else
+        return upper( txt );
+    end case;
+  exception
+    when others then return txt;
+
+  end;
+
     function  normalize_code( txt in clob ) return clob
     as
         ret_value clob := txt;
@@ -220,8 +248,8 @@ as
         i int := 0;
         tv varchar2(50);
     begin
-        def_keys := keys_to_array(definition_hash);
-        com_keys := keys_to_array(mr_standard_def);
+        def_keys := cSQL.ddlt_util.keys_to_array(definition_hash);
+        com_keys := cSQL.ddlt_util.keys_to_array(mr_standard_def);
 --        pat_keys := pattern_to_definition_keys( pattern_txt );
 
         -- fix keys ( remove * + ? *? +? )
@@ -439,5 +467,189 @@ end; ]';
             raise;
     end;
 
+/*************************************************************************************/
+  /* follows DRY method
+      procedure "_assert_{obj}" used to ensure same table macro DDLT_MACRO.assert_{obj} is called.
+      procedure assert_{obj}_[not_]_exists throws correct DDLT_ERRORS eror
+  */
+
+  procedure "_assert_schema"( uname in varchar2 )
+  as
+    CURSOR c is select * from cSQL.ddlt_macros.assert_schema(null);
+    var c%rowtype;
+  begin
+    select * into var from cSQL.ddlt_macros.assert_schema(uname);
+
+    raise item_exists;
+  exception
+    when no_data_found then
+      raise item_not_exists;
+  end;
+
+  procedure "_assert_object"( uname in varchar2, oname in varchar2 )
+  as
+    CURSOR c is select * from cSQL.ddlt_macros.assert_object(null,null);
+    var c%rowtype;
+  begin
+    select * into var from cSQL.ddlt_macros.assert_object(uname, oname);
+
+    raise item_exists;
+  exception
+    when no_data_found then
+      raise item_not_exists;
+  end;
+
+
+  procedure assert_schema_exists( uname in varchar2)
+  as
+  begin
+    "_assert_schema"( uname );
+  exception
+    when item_exists then
+      null;
+    when item_not_exists then
+      raise_application_error( cSQL.ddlt_errors.g_object_not_exists
+                              ,cSQL.DDLT_ERRORS.GET_ERROR_TEXT( cSQL.ddlt_errors.g_object_not_exists, 'SCHEMA', uname ));
+  end;
+
+  procedure assert_schema_not_exists( uname in varchar2 )
+  as
+  begin
+    "_assert_schema"( uname );
+  exception
+    when item_exists then
+      raise_application_error( cSQL.ddlt_errors.g_object_exists
+                              ,cSQL.DDLT_ERRORS.GET_ERROR_TEXT( cSQL.ddlt_errors.g_object_exists, 'SCHEMA', uname ));
+    when item_not_exists then
+      null;
+  end;
+
+  procedure assert_object_exists( uname in varchar2, oname in varchar2)
+  as
+    l_name varchar2(400);
+  begin
+
+    <<test_schema_and_modify>>
+    begin
+      assert_schema_exists( uname );
+
+      -- user exists, append a fake f() name so package name is `missle_name`
+      if 2 = cSQL.db_object_triplet( uname ).parts
+      then
+        l_name := uname || '.func';
+      else
+        l_name := uname;
+      end if;
+    exception
+      when cSQL.ddlt_errors.object_not_exists then
+        -- prepend USER so that Package is Middle or First name
+        l_name := user || '.' || uname;
+    end;
+
+
+    "_assert_object"( l_name, oname );
+  exception
+    when item_exists then
+      null;
+    when item_not_exists then
+      raise_application_error( cSQL.ddlt_errors.g_object_not_exists
+                              ,cSQL.DDLT_ERRORS.GET_ERROR_TEXT( cSQL.ddlt_errors.g_object_not_exists, upper(oname), l_name ));
+  end;
+
+  procedure assert_object_not_exists( uname in varchar2, oname in varchar2)
+  as
+  BEGIN
+    assert_object_exists( uname, oname );
+
+    raise_application_error( cSQL.ddlt_errors.g_object_exists
+                            ,cSQL.DDLT_ERRORS.GET_ERROR_TEXT( cSQL.ddlt_errors.g_object_exists, upper( oname ), uname ));
+  EXCEPTION
+    when cSQL.ddlt_errors.object_not_exists then null;
+  end;
+
+  procedure assert_package_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'PACKAGE');
+  end;
+
+  procedure assert_package_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'PACKAGE');
+  end;
+
+  procedure assert_type_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'TYPE');
+  end;
+
+  procedure assert_type_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'TYPE');
+  end;
+
+  procedure assert_btable_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'TABLE');
+  end;
+
+  procedure assert_btable_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'TABLE');
+  end;
+procedure assert_view_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'VIEW');
+  end;
+
+  procedure assert_view_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'VIEW');
+  end;
+
+  procedure assert_sequence_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'SEQUENCE');
+  end;
+
+  procedure assert_sequence_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'SEQUENCE');
+  end;
+
+    procedure assert_domain_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'DOMAIN');
+  end;
+
+  procedure assert_domain_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'DOMAIN');
+  end;
+
+  procedure assert_index_exists( uname in varchar2)
+  as
+  begin
+    assert_object_exists( uname, 'INDEX');
+  end;
+
+  procedure assert_index_not_exists( uname in varchar2)
+  as
+  begin
+    assert_object_not_exists( uname, 'INDEX');
+  end;
+
+  
 end;
 /

@@ -15,12 +15,26 @@ as
   
   member procedure init( self in out nocopy syntax_parser_t, act in varchar2, grp in varchar2, obj in varchar2)
   as
+    l_buffer syntax_parser_t;
   begin
-      select value(a) into self
+      select value(a) into l_buffer
       from syntax_lists a
       where a.syntax_action = act
         and a.syntax_group  = grp
         and a.syntax_subtype = obj;
+
+  -- method used so that sub-object can call this procedure        
+  self.syntax_action          := l_buffer.syntax_action;
+  self.syntax_group           := l_buffer.syntax_group;
+  self.syntax_subtype         := l_buffer.syntax_subtype;
+  self.matchrecognize_pattern := l_buffer.matchrecognize_pattern;
+  self.matchrecognize_define  := l_buffer.matchrecognize_define;
+  self.code_template          := l_buffer.code_template;
+  self.parsed_sql_schema      := l_buffer.parsed_sql_schema;
+  self.execution_snippet      := l_buffer.execution_snippet;
+  self.is_saved               := l_buffer.is_saved;
+  self.match_string           := l_buffer.match_string;
+
 
       self.is_saved := true;
   exception
@@ -120,6 +134,12 @@ as
     is_valid  number(1);
     j         json;
   begin 
+    -- TODO - not final
+    -- overloaded version checks
+    --   [not] exists of DB objects
+    --   required keywords
+    --   other "completeness"
+    
     if self.parsed_sql_schema is NULL
     then
       return;
@@ -233,7 +253,10 @@ as
   member procedure assert_syntax( self in out nocopy syntax_parser_t, code clob)
   as
   begin
-    -- applies syntax_regexp to code
+    -- TODO - not final
+    -- assert it matches self.match_string
+    -- assert counts of `(` and `)` match
+    -- overload adds individual cheks
     null;
   end;
   

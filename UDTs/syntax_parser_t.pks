@@ -2,7 +2,14 @@ create or replace
 type syntax_parser_t as object
 (
   /**
-    Object for translating and generating custom SQL statements
+    Parent Object for translating and generating custom SQL statements
+
+    All child objects handle the unique assertions
+    - they should have the name format `${group}_${subgroup}_syntax`
+    - utility code package name format `${group}_${sungroup}_assertions`
+    - each ${action} should override
+      - assert_syntax( clob ) { usually, no-op }
+      - assert_json( JSON )
     
     - syntax_action - enum of 'grant','drop','alter' etc
     - syntax_group - groups various syntaxes together (eg `create application security_class` and `create application acl`
@@ -144,5 +151,5 @@ type syntax_parser_t as object
    * @return            generated code
    */
   ,member function build_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return clob
-);
+) not final;
 /

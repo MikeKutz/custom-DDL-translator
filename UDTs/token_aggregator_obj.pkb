@@ -8,7 +8,7 @@ as
         aggregator_pk := token_aggregator_seq.nextval;
         lvl  := 1;
         is_sub := 0;
-        work_state := ddlt_util.work_on_self;
+        work_state := cSQL.token_aggregator_globals.work_on_self;
 
         return;
     end;
@@ -46,9 +46,9 @@ as
     begin
 
         case is_sub
-            when ddlt_util.p2s_no then
+            when cSQL.token_aggregator_globals.p2s_no then
                 err_code := self_iterator(t);
-            when ddlt_util.p2s_yes then
+            when cSQL.token_aggregator_globals.p2s_yes then
                 err_code := sub_iterator(t);
             else
                 raise no_data_found;
@@ -168,41 +168,41 @@ as
                         return 0;
                     when 'obj_comma' then
                         -- done with this object
-                        return ddlt_util.work_on_sub_object;
+                        return cSQL.token_aggregator_globals.work_on_sub_object;
                     when 'start_list' then
-                        work_state := ddlt_util.work_on_array;
+                        work_state := cSQL.token_aggregator_globals.work_on_array;
                         temp_array := null;
                     when 'start_exp' then
-                        work_state := ddlt_util.work_on_expression;
+                        work_state := cSQL.token_aggregator_globals.work_on_expression;
                         temp_string := null;
 --                        new_ref_obj( lvl );
 --                        is_sub := 1;
---                        -- sub_json.work_state := ddlt_util.work_on_expression;
+--                        -- sub_json.work_state := cSQL.token_aggregator_globals.work_on_expression;
 --                        -- sub_json.save_self
                     when 'start_obj' then
                         new_ref_obj( lvl );
                         is_sub := 1;
-                        work_state := ddlt_util.work_on_sub_object;
+                        work_state := cSQL.token_aggregator_globals.work_on_sub_object;
                     when 'start_obj_array' then
                         temp_array := null;
                         new_ref_obj( lvl );
                         is_sub := 1;
-                        work_state := ddlt_util.work_on_sub_object_array;
+                        work_state := cSQL.token_aggregator_globals.work_on_sub_object_array;
                         log_info( 'starting new object array length(json_text)=' || length(json_txt));
                     when 'end_obj_array' then
-                        return ddlt_util.work_on_sub_object_array;
+                        return cSQL.token_aggregator_globals.work_on_sub_object_array;
                     when 'end_exp' then
                         -- i'm done working on an Expression
                         ddlt_util.append_key_string( json_txt, nvl( current_name, 'exp' ), trim(temp_string) );
-                        work_state := ddlt_util.work_on_self;
+                        work_state := cSQL.token_aggregator_globals.work_on_self;
                         return 0;
                     when 'end_list' then
                         -- i'm working on an Array
                         ddlt_util.append_key_array( json_txt, nvl( current_name, 'arr' ), temp_array );
-                        work_state := ddlt_util.work_on_self;
+                        work_state := cSQL.token_aggregator_globals.work_on_self;
                         return 0;
                     when 'end_obj' then
-                        return ddlt_util.work_on_sub_object;
+                        return cSQL.token_aggregator_globals.work_on_sub_object;
                     else
                         log_info( 'BAD c_% -- ' || t.match_class );
 
@@ -210,9 +210,9 @@ as
 
             else
                 case work_state
-                    when ddlt_util.work_on_expression then
+                    when cSQL.token_aggregator_globals.work_on_expression then
                         temp_string := temp_string || t.token || ' ';
-                    when ddlt_util.work_on_array then
+                    when cSQL.token_aggregator_globals.work_on_array then
                         ddlt_util.append_array_string( temp_array, t.token );
                     else
                         null;
@@ -312,46 +312,46 @@ as
         log_info('sub_log interator = ' || err_code );
 
         case err_code
-            when ddlt_util.work_on_self then
+            when cSQL.token_aggregator_globals.work_on_self then
                 return 0;
-            when ddlt_util.work_on_expression then
+            when cSQL.token_aggregator_globals.work_on_expression then
                 -- sub object is finished creating expression
-                if work_state = ddlt_util.work_on_sub_object
+                if work_state = cSQL.token_aggregator_globals.work_on_sub_object
                 then
                     ddlt_util.append_key_string( json_txt,  nvl(current_name,'exp'), v.temp_string );
 
-                    is_sub     := ddlt_util.p2s_no;
-                    work_state := ddlt_util.work_on_self;
+                    is_sub     := cSQL.token_aggregator_globals.p2s_no;
+                    work_state := cSQL.token_aggregator_globals.work_on_self;
                     return 0;
                 end if;
 
-                log_info( 'expecting state = ' || ddlt_util.work_on_self || ' : actual state = ' || work_state );
-                raise ddlt_util.general_error;
-            when ddlt_util.work_on_array then
+                log_info( 'expecting state = ' || cSQL.token_aggregator_globals.work_on_self || ' : actual state = ' || work_state );
+                raise cSQL.ddlt_errors.general_error;
+            when cSQL.token_aggregator_globals.work_on_array then
                 -- sub object is finished creating array
-                if work_state = ddlt_util.work_on_sub_object
+                if work_state = cSQL.token_aggregator_globals.work_on_sub_object
                 then
                    -- append string buffer put( current_name, sub.temp_array )
                    ddlt_util.append_key_array( json_txt, nvl(current_name,'arr'), v.temp_array );
-                    is_sub     := ddlt_util.p2s_no;
-                    work_state := ddlt_util.work_on_self;
+                    is_sub     := cSQL.token_aggregator_globals.p2s_no;
+                    work_state := cSQL.token_aggregator_globals.work_on_self;
                     return 0;
                 end if;
 
-                log_info( 'expecting state = ' || ddlt_util.work_on_self || ' : actual state = ' || work_state );
-                raise ddlt_util.general_error;
-            when ddlt_util.work_on_sub_object then
+                log_info( 'expecting state = ' || cSQL.token_aggregator_globals.work_on_self || ' : actual state = ' || work_state );
+                raise cSQL.ddlt_errors.general_error;
+            when cSQL.token_aggregator_globals.work_on_sub_object then
                 -- sub object is finished creating object
                 log_info( ' -- building object work_state=' || work_state );
                 case work_state
-                    when ddlt_util.work_on_sub_object then
+                    when cSQL.token_aggregator_globals.work_on_sub_object then
                         -- and we're adding key:object
                         ddlt_util.append_key_object( json_txt, nvl(current_name,'obj'), v.json_txt );
 
-                        is_sub     := ddlt_util.p2s_no;
-                        work_state := ddlt_util.work_on_self;
+                        is_sub     := cSQL.token_aggregator_globals.p2s_no;
+                        work_state := cSQL.token_aggregator_globals.work_on_self;
                         return 0;
-                    when ddlt_util.work_on_sub_object_array then
+                    when cSQL.token_aggregator_globals.work_on_sub_object_array then
                         -- and we're appending object to array
                         ddlt_util.append_array_object( temp_array, v.json_txt );
                         -- MISSING !!
@@ -359,9 +359,9 @@ as
                         return 0;
                     else
                         log_info('blah');
-                        raise ddlt_util.general_error;
+                        raise cSQL.ddlt_errors.general_error;
                 end case;
-            when ddlt_util.work_on_sub_object_array then
+            when cSQL.token_aggregator_globals.work_on_sub_object_array then
                 -- sub object is finished making object
                 --    and tells us we're done with making our array
 
@@ -371,8 +371,8 @@ as
                 ddlt_util.append_key_array( json_txt, nvl( current_name, 'arrObj'), temp_array );
 
 
-                is_sub     := ddlt_util.p2s_no;
-                work_state := ddlt_util.work_on_self;
+                is_sub     := cSQL.token_aggregator_globals.p2s_no;
+                work_state := cSQL.token_aggregator_globals.work_on_self;
                 return 0;
             else
                 log_info( 'uncaught error = ' || err_code || ' : current state = ' || work_state);
