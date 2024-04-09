@@ -31,7 +31,7 @@ type syntax_parser_t as object
   ,matchrecognize_define  MKLibrary.Hash_t
   ,code_template          teJSON.Blueprint
   ,parsed_sql_schema      clob
-  ,execution_snippet      VARCHAR2(200 char)
+  ,execution_snippets     cSQL.snippet_list
   ,is_saved               boolean
   ,match_string           varchar2(1000 char)
   
@@ -97,6 +97,12 @@ type syntax_parser_t as object
    */
   ,member procedure assert_parsed( self in out nocopy syntax_parser_t, parsed JSON)
 
+  /* snippet list modifications */
+  ,member procedure append_snippet_list( s varchar2 )
+  ,member procedure update_snippet_list( n int, s varchar2)
+  ,member procedure clear_snippet_list
+  ,member procedure delete_from_snippet_list( n int )
+
   /* saves the `syntax_group` as a known dimension */
   ,member procedure add_group(self in out nocopy syntax_parser_t )
 
@@ -151,5 +157,6 @@ type syntax_parser_t as object
    * @return            generated code
    */
   ,member function build_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return clob
+  ,member function build_all_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return MKLibrary.CLOB_Array
 ) not final;
 /
