@@ -199,11 +199,12 @@ as
     when not matched then insert values (b.obj)
     when matched then update
           set a.matchrecognize_pattern = b.obj.matchrecognize_pattern
-          ,a.matchrecognize_define = b.obj.matchrecognize_define
-          ,a.code_template = b.obj.code_template
-          ,a.is_saved = b.obj.is_saved
-          ,a.match_string = b.obj.match_string;
-          ---
+              ,a.matchrecognize_define = b.obj.matchrecognize_define
+                  ,a.code_template     = b.obj.code_template
+                  ,a.parsed_sql_schema = b.obj.parsed_sql_schema
+                  ,a.execution_snippets = b.obj.execution_snippets
+                  ,a.is_saved          = b.obj.is_saved
+                  ,a.match_string      = b.obj.match_string;
   end;
   
   member procedure delete_syntax(self in out nocopy syntax_parser_t )
