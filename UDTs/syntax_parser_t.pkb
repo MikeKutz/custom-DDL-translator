@@ -31,7 +31,7 @@ as
   self.matchrecognize_define  := l_buffer.matchrecognize_define;
   self.code_template          := l_buffer.code_template;
   self.parsed_sql_schema      := l_buffer.parsed_sql_schema;
-  self.execution_snippet      := l_buffer.execution_snippet;
+  self.execution_snippets     := l_buffer.execution_snippets;
   self.is_saved               := l_buffer.is_saved;
   self.match_string           := l_buffer.match_string;
 
@@ -284,13 +284,32 @@ as
 member function build_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return clob
 as
   ret_value  clob;
-  e          teJSON.Engine_t;
+  code_glob  MKLibrary.CLOB_Array;
 begin
-  <<assert_input>> -- turn to RAISE <exception>
+  -- actually generate code
+  code_glob := self.build_all_code( parsed_sql );
+
+  dbms_lob.CREATETEMPORARY( ret_value, true );
+  for code_txt in values of code_glob
+  loop
+    dbms_lob.append( ret_value, code_txt || to_clob( chr(10) ) );
+  end loop;
+
+  return ret_value;
+end build_code;
+
+member function build_all_code( self in out nocopy syntax_parser_t, parsed_sql   JSON) return MKLibrary.CLOB_Array
+as
+  return_value MKLibrary.CLOB_Array := new MKLibrary.CLOB_Array();
+  i   int;
+  e   teJSON.Engine_t;
+begin
+  <<assert_input>> -- turn to RAISE <exception>; move to BUILD_ALL_CODE
   begin
     if parsed_sql is NULL then goto EOF; end if;
     if self.code_template is NULL then goto EOF; end if;
-    if self.execution_snippet is NULL then goto EOF; end if;
+    if self.execution_snippets is NULL then goto EOF; end if;
+    -- if self.execution_snippets.count = 0 then goto EOF; end if;
 
     -- assert.parsed_sql( parsed_sql )
 
@@ -305,14 +324,57 @@ begin
   -- set Engine_t.vars
   e.vars.json_clob := json_serialize(parsed_sql);
 
-  -- actually generate code
-  ret_value := e.render_snippet( self.execution_snippet );
+  i := 1;
+  for snippet in values of self.execution_snippets
+  loop
+    return_value.extend(1);
+    return_value( return_value.last ) := e.render_snippet( snippet );
+    i := i + 1;
+  end loop;
 
   <<EOF>>
-  return ret_value;
-end;
+  return return_value;
+end build_all_code;
 
-end;
+member procedure append_snippet_list( s varchar2 )
+as
+begin
+  if self.execution_snippets is null then
+    self.execution_snippets := new cSQL.snippet_list( s );
+    return;
+  end if;
+
+  if self.execution_snippets.count >= self.execution_snippets.limit
+  then
+    raise too_many_rows;
+  end if;
+
+  self.execution_snippets.extend(1);
+  self.execution_snippets( self.execution_snippets.last ) := s;
+end ;
+
+member procedure clear_snippet_list
+as
+begin
+  self.execution_snippets := new cSQL.snippet_list();
+end clear_snippet_list;
+
+member procedure update_snippet_list( n int, s varchar2)
+as
+begin
+  if n <= self.execution_snippets.count
+  then
+    self.execution_snippets( n ) := s;
+  end if;
+end update_snippet_list;
+
+member procedure delete_from_snippet_list( n int )
+as
+begin
+  raise zero_divide;
+end delete_from_snippet_list;
+
+end syntax_parser_t;
 /
 
   

@@ -25,7 +25,8 @@ as
     where sql_text like x.match_string;
 
     -- convert sql_text to JSON
-    parsed_code := obj.transpile( sql_text );
+    parsed_code := obj.transpile( sql_text ); -- parsed_tokens := obj.parse_string( sql_text );
+
 
     -- validate JSON
     -- TODO: validate JSON
@@ -61,7 +62,7 @@ as
       else
       -- dbms_output.put_line( json_serialize(j));
       -- render code
-      translated_text := obj.build_code( parsed_code );
+        translated_text := obj.build_code( parsed_code );
     end case;
 
     return; 

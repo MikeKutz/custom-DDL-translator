@@ -9,7 +9,7 @@ BEGIN
 end;
 /
 
-BEGIN
-    dbms_sql_translator.DROP_PROFILE( profile_name => 'RAS_SQL');
-end;
-/
+-- BEGIN
+--     dbms_sql_translator.DROP_PROFILE( profile_name => 'RAS_SQL');
+-- end;
+-- /
