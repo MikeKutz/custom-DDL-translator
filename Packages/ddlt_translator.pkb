@@ -21,7 +21,7 @@ as
     rendered_code  MKLibrary.CLOB_Array;
   BEGIN
     select value(x) into obj
-    from syntax_lists x
+    from cSQL.syntax_lists x
     where sql_text like x.match_string;
 
     -- convert sql_text to JSON
@@ -43,16 +43,17 @@ as
         for i,snippet in pairs of rendered_code
         loop
           -- null;
+          dbms_output.put_line( snippet );
           execute_annonymous( snippet );
         end loop;
 
         case obj.syntax_action
           when 'drop' then
-            execute_annonymous( 'create package ".c##temp" as end;' );
-            translated_text := 'drop package ".c##temp"';
+            execute_annonymous( 'create or replace procedure ".c##temp" as begin null; end;' );
+            translated_text := 'drop procedure if exists ".c##temp"';
           when 'alter' then
-            execute_annonymous( 'create or replace procedure cSQL.".noop" as begin null; end;' );
-            translated_text := 'alter package cSQL.".noop" compile';
+            execute_annonymous( 'create or replace procedure ".noop" as begin null; end;' );
+            translated_text := 'alter procedure ".noop" compile';
           when 'create' then
             translated_text := 'create or replace procedure ".noop" as begin null; end;';
           else
