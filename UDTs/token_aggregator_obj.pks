@@ -1,4 +1,5 @@
-create or replace type token_aggregator_obj is object (
+create or replace
+type token_aggregator_obj is object (
     -- WAS agg_syn_json
     aggregator_pk   int,
     lvl           int,

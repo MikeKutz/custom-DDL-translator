@@ -43,8 +43,11 @@ as
         for i,snippet in pairs of rendered_code
         loop
           -- null;
-          dbms_output.put_line( snippet );
-          execute_annonymous( snippet );
+          dbms_output.put_line( snippet || chr(10) || chr(10) );
+
+          if false then
+            execute_annonymous( snippet );
+          end if;
         end loop;
 
         case obj.syntax_action

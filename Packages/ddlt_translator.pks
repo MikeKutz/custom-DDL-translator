@@ -15,5 +15,3 @@ as
 	);
 end;
 /
-
-select user, sys_context('userenv','current_schema') current_schema;

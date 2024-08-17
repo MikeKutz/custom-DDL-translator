@@ -1,4 +1,5 @@
-create or replace type body token_aggregator_obj
+create or replace
+type body token_aggregator_obj
 as
     constructor function token_aggregator_obj return self as result
     as
