@@ -11,6 +11,7 @@ set define off;
 
 -- Tables
 @@./Tables/SQL_Actions.sql
+@@./Data/init_SQL_Actions.sql
 @@./Tables/syntax_groups.sql
 @@./Tables/gtt_tokens.sql
 @@./Tables/token_aggregators.sql
